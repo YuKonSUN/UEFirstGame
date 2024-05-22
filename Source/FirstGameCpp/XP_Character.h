@@ -101,7 +101,7 @@ private:
 
 	void Attack();
 
-	
+	UAnimInstance* AnimInstance;
 	
 
 };

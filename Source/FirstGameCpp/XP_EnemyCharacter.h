@@ -9,8 +9,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/ArrowComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Animation/AnimMontage.h"
 #include "Animation/AnimInstance.h"
 #include <Runtime/AIModule/Classes/AITypes.h>
+#include "TimerManager.h"
 
 #include "XP_EnemyCharacter.generated.h"
 
@@ -35,12 +38,14 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	//float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 public:
 
 	UFUNCTION()
 	void OnAIMoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result);
+
+	void CheckForEnemiesAndDestroy();
 
 private:
 
@@ -94,6 +99,14 @@ private:
 
 	void ChasePlayer();
 
-	
+	void GetAIController();
+
+	AAIController* AIController;
+
+	FTimerHandle DelayTimerHandle;
+
+	UAnimInstance* AnimInstance;
+
+	FTimerHandle TimerHandle_GetAIController;
 
 };

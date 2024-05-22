@@ -40,7 +40,23 @@ AXP_Character::AXP_Character()
 void AXP_Character::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	AnimInstance = GetMesh()->GetAnimInstance();
+
+	/*FOnMontageEnded EndedDelegate;
+			EndedDelegate.BindUObject(this, &AXP_Character::OnAttackMontageEnded);
+			AnimInstance->Montage_SetEndDelegate(EndedDelegate, PushMontage);*/
+
+			/*FScriptDelegate BeginDelegateSubscriber;
+			BeginDelegateSubscriber.BindUFunction(this, "OnAttackMontageEnded");
+			AnimInstance->OnMontageEnded.Add(BeginDelegateSubscriber);*/
+
+	AnimInstance->OnMontageEnded.AddDynamic(this, &AXP_Character::OnAttackMontageEnded);
+
+	/*FScriptDelegate NotifyBeginDelegateSubscriber;
+	NotifyBeginDelegateSubscriber.BindUFunction(this, "OnNotifyBegin");
+	AnimInstance->OnPlayMontageNotifyBegin.Add(NotifyBeginDelegateSubscriber);*/
+
+	AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &AXP_Character::OnNotifyBegin);
 }
 
 void AXP_Character::Movement(const FInputActionValue& ActionValue)
@@ -78,21 +94,9 @@ void AXP_Character::Attack()
 		bCanAttack = false;
 
 		//播放攻击动画
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
 		if (AnimInstance)
 		{
-			/*FOnMontageEnded EndedDelegate;
-			EndedDelegate.BindUObject(this, &AXP_Character::OnAttackMontageEnded);
-			AnimInstance->Montage_SetEndDelegate(EndedDelegate, PushMontage);*/
-			
-			FScriptDelegate BeginDelegateSubscriber;
-			BeginDelegateSubscriber.BindUFunction(this, "OnAttackMontageEnded");
-			AnimInstance->OnMontageEnded.Add(BeginDelegateSubscriber);
-
-			FScriptDelegate NotifyBeginDelegateSubscriber;
-			NotifyBeginDelegateSubscriber.BindUFunction(this, "OnNotifyBegin");
-			AnimInstance->OnPlayMontageNotifyBegin.Add(NotifyBeginDelegateSubscriber);
 
 			
 			AnimInstance->Montage_Play(PushMontage);
@@ -147,9 +151,26 @@ void AXP_Character::OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyP
 	TArray<AActor*> IgnoredActors;
 	IgnoredActors.Add(this);
 
-	FHitResult HitResult;
-	bool bHit = UKismetSystemLibrary::SphereTraceSingle(this, Start, End, AttackRadius, ETraceTypeQuery::TraceTypeQuery1, false, IgnoredActors, EDrawDebugTrace::ForDuration, HitResult, true);
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 
+	FHitResult HitResult;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		this,
+		Start,
+		End,
+		AttackRadius,
+		ObjectTypes,
+		false,
+		IgnoredActors,
+		EDrawDebugTrace::ForDuration,
+		HitResult,
+		true
+	);
+
+	/*FHitResult HitResult;
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(this, Start, End, AttackRadius, ETraceTypeQuery::TraceTypeQuery1, false, IgnoredActors, EDrawDebugTrace::ForDuration, HitResult, true);*/
+	
 	if (bHit)
 	{
 		// 处理攻击命中逻辑
@@ -183,6 +204,8 @@ float AXP_Character::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 		{
 			DisableInput(PlayerController);
 		}
+
+		
 
 		// 启用模拟物理
 		GetMesh()->SetSimulatePhysics(true);
