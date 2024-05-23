@@ -7,6 +7,7 @@
 #include "EnhancedInputComponent.h"
 #include <Kismet/KismetSystemLibrary.h>
 #include <Kismet/GameplayStatics.h>
+#include <Subsystems/PanelExtensionSubsystem.h>
 
 // Sets default values
 AXP_Character::AXP_Character()
@@ -32,6 +33,7 @@ AXP_Character::AXP_Character()
 	BaseDamage = 10.0f;
 	AttackRadius = 25.0f;
 	bCanAttack = true;
+	MaxHealth = 100.f;
 	Health = 100.0f;  // 假设初始生命值为100
 	
 }
@@ -42,29 +44,19 @@ void AXP_Character::BeginPlay()
 	Super::BeginPlay();
 	AnimInstance = GetMesh()->GetAnimInstance();
 
-	/*FOnMontageEnded EndedDelegate;
-			EndedDelegate.BindUObject(this, &AXP_Character::OnAttackMontageEnded);
-			AnimInstance->Montage_SetEndDelegate(EndedDelegate, PushMontage);*/
-
-			/*FScriptDelegate BeginDelegateSubscriber;
-			BeginDelegateSubscriber.BindUFunction(this, "OnAttackMontageEnded");
-			AnimInstance->OnMontageEnded.Add(BeginDelegateSubscriber);*/
 
 	AnimInstance->OnMontageEnded.AddDynamic(this, &AXP_Character::OnAttackMontageEnded);
 
-	/*FScriptDelegate NotifyBeginDelegateSubscriber;
-	NotifyBeginDelegateSubscriber.BindUFunction(this, "OnNotifyBegin");
-	AnimInstance->OnPlayMontageNotifyBegin.Add(NotifyBeginDelegateSubscriber);*/
+
 
 	AnimInstance->OnPlayMontageNotifyBegin.AddDynamic(this, &AXP_Character::OnNotifyBegin);
+
+	CreateHealthBarWidget();
 }
 
 void AXP_Character::Movement(const FInputActionValue& ActionValue)
 {
 	FVector2D InputVector = ActionValue.Get<FVector2D>();
-
-	/*const FVector ForwardVector = GetActorForwardVector();
-	const FVector RightVector = GetActorRightVector();*/
 
 	// 获取控制器的旋转
 	FRotator ControlRotation = Controller != nullptr ? Controller->GetControlRotation() : FRotator::ZeroRotator;
@@ -100,6 +92,37 @@ void AXP_Character::Attack()
 
 			
 			AnimInstance->Montage_Play(PushMontage);
+		}
+	}
+}
+
+void AXP_Character::CreateHealthBarWidget()
+{
+	if (HealthBarWidgetClass)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			APlayerController* PlayerController = World->GetFirstPlayerController();
+			if (PlayerController)
+			{
+				HealthBarWidget = CreateWidget<UUserWidget>(World, HealthBarWidgetClass);
+				if (HealthBarWidget)
+				{
+					//HealthBarWidget->AddToViewport();
+					HealthBarWidget->AddToViewport();
+					//PlayerController->bShowMouseCursor = true;
+				}
+
+				AttackHUDWidget = CreateWidget<UUserWidget>(World, AttackHUDWidgetClass);
+				if (AttackHUDWidget)
+				{
+					//HealthBarWidget->AddToViewport();
+					AttackHUDWidget->AddToViewport();
+					//PlayerController->bShowMouseCursor = true;
+				}
+
+			}
 		}
 	}
 }
@@ -189,6 +212,7 @@ float AXP_Character::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 
 	// 减少角色生命值
 	Health -= DamageAmount;
+
 
 	// 播放受伤声音
 	UGameplayStatics::PlaySoundAtLocation(this, DamageSound, GetActorLocation());

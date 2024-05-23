@@ -50,5 +50,18 @@ public:
 	TSubclassOf<AActor> Enemy;
 
 	/*void SpawnEnemies();*/
+	UFUNCTION()
+	void CheckForEnemy();
+
+private:
+	FTimerHandle CheckEnemiesTimerHandle;
+
+public:
+	UFUNCTION()
+	void HandleNextWave();
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	FText MyText;
 
 };

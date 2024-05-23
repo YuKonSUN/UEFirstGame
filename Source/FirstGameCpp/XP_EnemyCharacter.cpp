@@ -2,6 +2,7 @@
 
 
 #include "XP_EnemyCharacter.h"
+#include "WaveSpawnerActor.h"
 #include <FunctionalAITest.generated.h>
 
 //#include <FunctionalAITest.generated.h>
@@ -33,18 +34,7 @@ void AXP_EnemyCharacter::BeginPlay()
 
 	GetWorldTimerManager().SetTimer(TimerHandle_GetAIController, this, &AXP_EnemyCharacter::GetAIController, 0.5f, false);
 
-	//AIController = Cast<AAIController>(GetController());
-	////AIController->ReceiveMoveCompleted.AddDynamic(this, &AXP_EnemyCharacter::OnAIMoveCompleted);
-
-	//if (AIController)
-	//{
-	//	AIController->ReceiveMoveCompleted.AddDynamic(this, &AXP_EnemyCharacter::OnAIMoveCompleted);
-	//}
-	//else
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("AIController is null in BeginPlay"));
-	//}
-	//ChasePlayer();
+	SetRandomMesh();
 	
 }
 
@@ -77,13 +67,6 @@ float AXP_EnemyCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dam
 	{
 		Health = 0;
 
-		//// 禁用输入
-		//APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		//if (PlayerController)
-		//{
-		//	DisableInput(PlayerController);
-		//}
-		
 		
 
 		// 启用模拟物理
@@ -140,7 +123,37 @@ void AXP_EnemyCharacter::OnAIMoveCompleted(FAIRequestID RequestID, EPathFollowin
 void AXP_EnemyCharacter::CheckForEnemiesAndDestroy()
 {
 	
+
+	// 查找所有 AWaveSpawnerActor 类型的对象
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWaveSpawnerActor::StaticClass(), FoundActors);
+
+	if (FoundActors.Num() > 0)
+	{
+		// 取第一个找到的 AWaveSpawnerActor
+		AWaveSpawnerActor* FoundEnemy = Cast<AWaveSpawnerActor>(FoundActors[0]);
+		if (FoundEnemy)
+		{
+			// 调用 CheckForEnemy
+			FoundEnemy->CheckForEnemy();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to cast FoundActor to AWaveSpawnerActor."));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No AWaveSpawnerActor found in the world."));
+	}
 	Destroy();
+	
+	/*TSubclassOf<AActor> FoundEnemies;
+	UGameplayStatics::GetActorOfClass(AWaveSpawnerActor::StaticClass(), FoundEnemies);
+	AWaveSpawnerActor* FoundEnemy = Cast<AWaveSpawnerActor>(FoundEnemies);
+
+	if(FoundEnemy)
+		FoundEnemy->CheckForEnemy();*/
 }
 
 void AXP_EnemyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
@@ -227,6 +240,19 @@ void AXP_EnemyCharacter::GetAIController()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to get AIController, retrying..."));
 		GetWorldTimerManager().SetTimer(TimerHandle_GetAIController, this, &AXP_EnemyCharacter::GetAIController, 0.5f, false);
+	}
+}
+
+void AXP_EnemyCharacter::SetRandomMesh()
+{
+	if (Meshes.Num() > 0)
+	{
+		// 随机选择一个网格
+		int32 RandomIndex = FMath::RandRange(0, Meshes.Num() - 1);
+		USkeletalMesh* RandomMesh = Meshes[RandomIndex];
+
+		// 设置网格
+		GetMesh()->SetSkeletalMesh(RandomMesh);
 	}
 }
 

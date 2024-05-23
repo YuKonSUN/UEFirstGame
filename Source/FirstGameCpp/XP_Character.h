@@ -10,6 +10,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Engine/StaticMesh.h"
+#include "Blueprint/UserWidget.h"
+
 #include "XP_Character.generated.h"
 
 UCLASS()
@@ -61,6 +63,11 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float Health;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	float MaxHealth;
+
+
+
 	bool bCanAttack;
 
 	// 回调函数
@@ -102,6 +109,25 @@ private:
 	void Attack();
 
 	UAnimInstance* AnimInstance;
+
+public:
+	// 在这里声明函数
+	void CreateHealthBarWidget();
+
+	// 在这里声明变量
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> HealthBarWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> AttackHUDWidgetClass;
+
+protected:
+
+	UUserWidget* HealthBarWidget;
+
+	//UPROPERTY(BlueprintReadWrite)
+	UUserWidget* AttackHUDWidget;
+
 	
 
 };

@@ -32,10 +32,25 @@ void AWaveSpawnerActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	//TArray<AActor*> FoundEnemies;
+	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), AXP_EnemyCharacter::StaticClass(), FoundEnemies);
+
+	//if (FoundEnemies.Num() == 0)
+	//{
+	//	// 没有敌人，生成新的敌人波
+	//	SpawnWave();
+	//}
 }
 
 void AWaveSpawnerActor::SpawnWave()
 {
+	if (WaveSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, WaveSound, GetActorLocation());
+	}
+	FText FormatPattern = FText::FromString(TEXT("Wave {0}"));
+	MyText = FText::Format(FormatPattern, FText::AsNumber(currentValue+1));
+
 	for (int i = 0; i < Waves[currentValue]; i++)
 	{
 		int32 RandomIndex = FMath::RandRange(0, SpawnedWavePositions.Num() - 1);
@@ -53,6 +68,28 @@ void AWaveSpawnerActor::SpawnWave()
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn enemy"));
 		}
+	}
+	currentValue++;
+}
+
+void AWaveSpawnerActor::CheckForEnemy()
+{
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().SetTimer(CheckEnemiesTimerHandle, this, &AWaveSpawnerActor::HandleNextWave, 0.2f, false);
+	}
+
+}
+
+void AWaveSpawnerActor::HandleNextWave()
+{
+	TArray<AActor*> FoundEnemies;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AXP_EnemyCharacter::StaticClass(), FoundEnemies);
+
+	if (FoundEnemies.Num() == 0)
+	{
+		// 没有敌人，生成新的敌人波
+		SpawnWave();
 	}
 }
 

@@ -95,11 +95,16 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	float TurnSpeed = 100.f;
 
+	UPROPERTY(EditAnywhere, Category = "Mesh")
+	TArray<USkeletalMesh*> Meshes;
+
 private:
 
 	void ChasePlayer();
 
 	void GetAIController();
+
+	void SetRandomMesh();
 
 	AAIController* AIController;
 
