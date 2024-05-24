@@ -7,7 +7,7 @@
 #include "EnhancedInputComponent.h"
 #include <Kismet/KismetSystemLibrary.h>
 #include <Kismet/GameplayStatics.h>
-#include <Subsystems/PanelExtensionSubsystem.h>
+
 
 // Sets default values
 AXP_Character::AXP_Character()

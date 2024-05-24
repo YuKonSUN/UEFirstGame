@@ -3,7 +3,7 @@
 
 #include "XP_EnemyCharacter.h"
 #include "WaveSpawnerActor.h"
-#include <FunctionalAITest.generated.h>
+
 
 //#include <FunctionalAITest.generated.h>
 
