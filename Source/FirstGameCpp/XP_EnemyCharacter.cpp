@@ -189,7 +189,7 @@ void AXP_EnemyCharacter::OnNotifyBegin(FName NotifyName, const FBranchingPointNo
 		ObjectTypes,
 		false,
 		IgnoredActors,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		HitResult,
 		true
 	);

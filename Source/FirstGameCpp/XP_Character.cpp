@@ -186,7 +186,7 @@ void AXP_Character::OnNotifyBegin(FName NotifyName, const FBranchingPointNotifyP
 		ObjectTypes,
 		false,
 		IgnoredActors,
-		EDrawDebugTrace::ForDuration,
+		EDrawDebugTrace::None,
 		HitResult,
 		true
 	);
@@ -232,7 +232,16 @@ float AXP_Character::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 		
 
 		// 启用模拟物理
-		GetMesh()->SetSimulatePhysics(true);
+		//GetMesh()->SetSimulatePhysics(true);
+
+		GetMesh()->SetSimulatePhysics(true); // 设置模拟物理
+		GetMesh()->SetCollisionProfileName(TEXT("Custom")); // 设置碰撞预设为自定义
+		GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); // 启用查询和物理碰撞
+		GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block); // 设置所有碰撞通道的默认响应
+		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+		GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+		bCanAttack = false;
 	}
 	else
 	{

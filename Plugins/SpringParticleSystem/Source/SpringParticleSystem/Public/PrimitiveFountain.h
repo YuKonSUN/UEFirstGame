@@ -4,7 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Components/StaticMeshComponent.h"
+#include "Materials/Material.h"
+#include "Engine/StaticMesh.h"
+#include "UObject/ConstructorHelpers.h"
 #include "PrimitiveFountain.generated.h"
+
+
+USTRUCT(BlueprintType)
+struct FParticle
+{
+    GENERATED_BODY()
+
+    UStaticMeshComponent* MeshComponent;
+
+    FVector Size;
+
+    FVector InitialVelocity;
+
+    FVector InitialLocation;
+
+    FVector Location;
+
+    float LifeTime;
+
+    bool bIsActive;
+};
 
 UCLASS()
 class SPRINGPARTICLESYSTEM_API APrimitiveFountain : public AActor
@@ -36,10 +61,7 @@ public:
     float MaxSpawnInterval;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fountain Settings")
-    float MinSpawnVelocity;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fountain Settings")
-    float MaxSpawnVelocity;
+    float SpawnVelocity;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fountain Settings")
     FVector SpawnArea;
@@ -50,9 +72,22 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fountain Settings")
     FVector MaxScale;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fountain Settings")
+    float LaunchAngle;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fountain Settings")
+    float LifeTime;
+
 private:
 
-    void SpawnPrimitive();
+    //void SpawnPrimitive();
+
+    void SpawnParticle();
 
     float TimeUntilNextSpawn;
+
+    TArray<FParticle> ParticlePool;
+    int ParticlePoolSize;
+
+    int CurrentIndex;
 };

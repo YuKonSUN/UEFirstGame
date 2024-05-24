@@ -11,14 +11,17 @@ APrimitiveFountain::APrimitiveFountain()
 
     PrimaryActorTick.bCanEverTick = true;
 
-    MinSpawnInterval = 0.5f;
-    MaxSpawnInterval = 2.0f;
-    MinSpawnVelocity = 200.0f;
-    MaxSpawnVelocity = 600.0f;
-    SpawnArea = FVector(200.0f, 200.0f, 50.0f);
-    MinScale = FVector(0.5f);
-    MaxScale = FVector(2.0f);
+    MinSpawnInterval = 0.1f;
+    MaxSpawnInterval = 0.1f;
+    SpawnVelocity = 100.0f;
+    SpawnArea = FVector(0.0f,0.0f, 0.0f);
+    MinScale = FVector(0.1f);
+    MaxScale = FVector(0.2f);
+    LaunchAngle = 60.f;
+    LifeTime = 5.f;
 
+    ParticlePoolSize = 200;
+    CurrentIndex = 0;
     TimeUntilNextSpawn = FMath::FRandRange(MinSpawnInterval, MaxSpawnInterval);
 
 }
@@ -28,72 +31,132 @@ void APrimitiveFountain::BeginPlay()
 {
 	Super::BeginPlay();
 	
+    for (int i = 0; i < ParticlePoolSize; i++)
+    {
+        FParticle particle;
+        // Choose a random mesh and material
+        UStaticMesh* ChosenMesh = MeshTypes[FMath::RandRange(0, MeshTypes.Num() - 1)];
+        //UMaterial* ChosenMaterial = Materials[FMath::RandRange(0, Materials.Num() - 1)];
+
+        // Create the static mesh component
+        particle.MeshComponent = NewObject<UStaticMeshComponent>(this);
+        particle.MeshComponent->SetStaticMesh(ChosenMesh);
+        //MeshComponent->SetMaterial(0, ChosenMaterial);
+        particle.MeshComponent->RegisterComponentWithWorld(GetWorld());
+
+        // Set a random location within the spawn area
+        particle.InitialLocation = GetActorLocation() + FVector(
+            FMath::FRandRange(-SpawnArea.X / 2.0f, SpawnArea.X / 2.0f),
+            FMath::FRandRange(-SpawnArea.Y / 2.0f, SpawnArea.Y / 2.0f),
+            SpawnArea.Z
+        );
+        particle.Location = particle.InitialLocation;
+
+        particle.MeshComponent->SetWorldLocation(particle.InitialLocation);
+
+        // Set a random scale
+        particle.Size = FVector(
+            FMath::FRandRange(MinScale.X, MaxScale.X),
+            FMath::FRandRange(MinScale.Y, MaxScale.Y),
+            FMath::FRandRange(MinScale.Z, MaxScale.Z)
+        );
+
+        particle.MeshComponent->SetWorldScale3D(particle.Size);
+
+        float LaunchThetaRadians = FMath::DegreesToRadians(FMath::FRandRange(-180.f, 180.f));
+        float LaunchPhiRadians = FMath::DegreesToRadians(FMath::FRandRange(-LaunchAngle / 2.f, LaunchAngle / 2.f));
+        // Set a random velocity
+        particle.InitialVelocity = FVector(
+            FMath::Sin(LaunchThetaRadians) * FMath::Sin(LaunchPhiRadians) * SpawnVelocity,
+            FMath::Cos(LaunchThetaRadians) * FMath::Sin(LaunchPhiRadians) * SpawnVelocity,
+            FMath::Cos(LaunchPhiRadians) * SpawnVelocity
+        );
+
+        particle.MeshComponent->SetSimulatePhysics(false);
+        particle.MeshComponent->SetEnableGravity(false);
+        //particle.MeshComponent->SetPhysicsLinearVelocity(FVector(0));
+        //particle.MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+        /*particle.MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        particle.MeshComponent->SetCollisionObjectType(ECollisionChannel::ECC_PhysicsBody);
+        particle.MeshComponent->BodyInstance.SetCollisionProfileName("PhysicsActor");*/
+
+
+        particle.MeshComponent->SetVisibility(false, false);
+        particle.MeshComponent->SetHiddenInGame(true, true);
+        particle.bIsActive = false;
+
+        ParticlePool.Add(particle);
+    }
+    
+
 }
 
 // Called every frame
 void APrimitiveFountain::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+    
+    for (auto& particle : ParticlePool)
+    {
+        if (!particle.bIsActive)
+        {
+            continue;
+        }
+
+        particle.Location += particle.InitialVelocity * DeltaTime;
+        particle.MeshComponent->SetWorldLocation(particle.Location);
+
+        if (particle.LifeTime <= 0)
+        {
+            particle.bIsActive = false;
+            particle.MeshComponent->SetVisibility(false, false);
+            particle.MeshComponent->SetHiddenInGame(true, true);
+            //particle.MeshComponent->SetPhysicsLinearVelocity(FVector(0));
+            particle.Location = particle.InitialLocation;
+        }
+        
+        particle.LifeTime -= DeltaTime;
+    }
+
     TimeUntilNextSpawn -= DeltaTime;
 
     if (TimeUntilNextSpawn <= 0.0f)
     {
-        SpawnPrimitive();
+        SpawnParticle();
         TimeUntilNextSpawn = FMath::FRandRange(MinSpawnInterval, MaxSpawnInterval);
     }
+
 }
 
-void APrimitiveFountain::SpawnPrimitive()
+//void APrimitiveFountain::SpawnPrimitive()
+//{
+//    //if (MeshTypes.Num() == 0 || Materials.Num() == 0)
+//    if (MeshTypes.Num() == 0)
+//    {
+//        return;
+//    }
+//
+//    UWorld* World = GetWorld();
+//    if (!World)
+//    {
+//        return;
+//    }
+//
+//    
+//}
+
+void APrimitiveFountain::SpawnParticle()
 {
-    //if (MeshTypes.Num() == 0 || Materials.Num() == 0)
-    if (MeshTypes.Num() == 0)
-    {
-        return;
-    }
+    FParticle& particle = ParticlePool[CurrentIndex];
+    particle.bIsActive = true;
+    particle.MeshComponent->SetVisibility(true, true);
+    particle.MeshComponent->SetHiddenInGame(false, false);
+    particle.MeshComponent->SetWorldLocation(particle.InitialLocation);
+    //particle.MeshComponent->SetPhysicsLinearVelocity(particle.InitialVelocity);
+    particle.LifeTime = LifeTime;
 
-    UWorld* World = GetWorld();
-    if (!World)
-    {
-        return;
-    }
+    CurrentIndex = (CurrentIndex + 1) % ParticlePoolSize;
 
-    // Choose a random mesh and material
-    UStaticMesh* ChosenMesh = MeshTypes[FMath::RandRange(0, MeshTypes.Num() - 1)];
-    //UMaterial* ChosenMaterial = Materials[FMath::RandRange(0, Materials.Num() - 1)];
-
-    // Create the static mesh component
-    UStaticMeshComponent* MeshComponent = NewObject<UStaticMeshComponent>(this);
-    MeshComponent->SetStaticMesh(ChosenMesh);
-    //MeshComponent->SetMaterial(0, ChosenMaterial);
-    MeshComponent->RegisterComponentWithWorld(World);
-
-    // Set a random location within the spawn area
-    FVector Location = GetActorLocation() + FVector(
-        FMath::FRandRange(-SpawnArea.X / 2.0f, SpawnArea.X / 2.0f),
-        FMath::FRandRange(-SpawnArea.Y / 2.0f, SpawnArea.Y / 2.0f),
-        SpawnArea.Z
-    );
-
-    MeshComponent->SetWorldLocation(Location);
-
-    // Set a random scale
-    FVector Scale = FVector(
-        FMath::FRandRange(MinScale.X, MaxScale.X),
-        FMath::FRandRange(MinScale.Y, MaxScale.Y),
-        FMath::FRandRange(MinScale.Z, MaxScale.Z)
-    );
-
-    MeshComponent->SetWorldScale3D(Scale);
-
-    // Set a random velocity
-    FVector Velocity = FVector(
-        FMath::FRandRange(-MaxSpawnVelocity, MaxSpawnVelocity),
-        FMath::FRandRange(-MaxSpawnVelocity, MaxSpawnVelocity),
-        FMath::FRandRange(MinSpawnVelocity, MaxSpawnVelocity)
-    );
-
-    MeshComponent->SetSimulatePhysics(true);
-    MeshComponent->SetEnableGravity(false);
-    MeshComponent->SetPhysicsLinearVelocity(Velocity);
 }
 

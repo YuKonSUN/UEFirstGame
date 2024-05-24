@@ -44,6 +44,12 @@ void AWaveSpawnerActor::Tick(float DeltaTime)
 
 void AWaveSpawnerActor::SpawnWave()
 {
+	if (currentValue >= 3)
+	{
+		MyText = FText::FromString(TEXT("WIN!"));
+		return;
+	}
+		
 	if (WaveSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, WaveSound, GetActorLocation());
